@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>再看一眼</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-6 flex justify-center">
+
+<div class="max-w-3xl w-full">
+
+  <!-- 标题 -->
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold">再看一眼</h1>
+    <p class="text-gray-500 mt-2">帮你多想一步</p>
+  </div>
+
+  <!-- 输入区 -->
+  <div class="bg-white p-5 rounded-2xl shadow mb-4">
+    <textarea id="input" class="w-full h-40 border rounded-lg p-3"
+      placeholder="粘贴新闻内容..."></textarea>
+
+    <button onclick="analyze()"
+      class="mt-4 w-full bg-black text-white py-3 rounded-xl">
+      开始分析
+    </button>
+  </div>
+
+  <!-- loading -->
+  <div id="loading" class="hidden text-center text-gray-400 my-4">
+    分析中...
+  </div>
+
+  <!-- 结果区 -->
+  <div id="output" class="space-y-4"></div>
+
+</div>
+
+<script>
+async function analyze() {
+  const text = document.getElementById("input").value;
+  const output = document.getElementById("output");
+  const loading = document.getElementById("loading");
+
+  if (!text.trim()) return alert("请输入内容");
+
+  loading.classList.remove("hidden");
+  output.innerHTML = "";
+
+  const prompt = `请把分析结果按以下5个部分输出，并用【标题】标记：
+1、这段内容在说什么
+2、该说法可能的前提
+3、可以留意的表达或推理方式
+4、值得再想的问题
+5、进一步判断的建议
+
+内容：
+${text}`;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer YOUR_API_KEY"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  const data = await res.json();
+  const result = data.choices[0].message.content;
+
+  // 分块处理
+  const sections = result.split(/(?=\\d、)/);
+
+  sections.forEach(sec => {
+    const div = document.createElement("div");
+    div.className = "bg-white p-4 rounded-2xl shadow whitespace-pre-wrap";
+    div.innerText = sec;
+    output.appendChild(div);
+  });
+
+  loading.classList.add("hidden");
+}
+</script>
+
+</body>
+</html>
