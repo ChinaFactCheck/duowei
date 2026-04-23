@@ -97,8 +97,8 @@ async function analyze() {
 •需要哪些补充数据或信息？
 •可以查找哪些资料？
  
- 结尾必须包含：
- 我也可能有遗漏和错误，你的人为判断更重要。
+结尾必须包含：
+我也可能有遗漏和错误，你的判断更重要。
 
 ${text}`;
 
@@ -114,7 +114,13 @@ ${text}`;
   });
 
   const data = await res.json();
-  const result = data.choices[0].message.content;
+  const result = data.choices?.[0]?.message?.content;
+
+if (!result) {
+  output.innerHTML = "没有返回结果，可能请求失败";
+  loading.classList.add("hidden");
+  return;
+}
 
   // 分块处理
   const sections = result.split(/(?=\\d、)/);
