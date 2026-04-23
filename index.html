@@ -16,16 +16,23 @@
       <h1 class="text-2xl font-bold">多维</h1>
       <p class="text-gray-500 text-sm">帮你多想一步</p>
     </div>
-    <div class="text-xs text-gray-400">v1</div>
+    <div class="text-xs text-gray-400">beta</div>
   </div>
 
   <!-- 输入区 -->
   <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100 mb-4">
+    
     <textarea id="input"
       class="w-full h-40 border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-black"
       placeholder="粘贴一段内容，试着多想一步..."></textarea>
 
-    <!-- 模式选择 -->
+    <!-- 示例按钮 -->
+    <button onclick="fillExample()" 
+      class="mt-2 text-sm text-gray-500 underline">
+      试试看示例
+    </button>
+
+    <!-- 模式 -->
     <div class="flex gap-2 mt-4">
       <button onclick="setMode('standard')" id="mode-standard"
         class="px-3 py-1 rounded-lg bg-black text-white text-sm">标准分析</button>
@@ -41,18 +48,25 @@
     </button>
   </div>
 
+  <!-- 引导 -->
+  <div id="guide" class="text-gray-400 text-sm mb-4">
+    👉 选择一种模式 → 粘贴内容 → 点击分析  
+    👉 试着关注“你原本没有注意到的地方”
+  </div>
+
   <!-- loading -->
   <div id="loading" class="hidden text-center text-gray-400 my-4">
     分析中...
   </div>
 
-  <!-- 空状态 -->
-  <div id="empty" class="text-center text-gray-400 mt-10">
-    输入一段内容，看看会发生什么
-  </div>
-
   <!-- 输出 -->
   <div id="output" class="space-y-4 mt-4"></div>
+
+  <!-- 复制按钮 -->
+  <button id="copyBtn" onclick="copyResult()"
+    class="hidden mt-4 w-full bg-gray-200 py-2 rounded-xl">
+    复制结果
+  </button>
 
 </div>
 
@@ -61,7 +75,6 @@ let currentMode = "standard";
 
 function setMode(mode) {
   currentMode = mode;
-
   ["standard", "question", "multi"].forEach(m => {
     document.getElementById("mode-" + m).className =
       "px-3 py-1 rounded-lg text-sm " +
@@ -69,20 +82,20 @@ function setMode(mode) {
   });
 }
 
+function fillExample() {
+  document.getElementById("input").value =
+`某国宣布将大幅增加新能源投资，并表示这将改变全球能源格局。有观点认为，这一举措不仅是环保需求，更是地缘政治布局。`;
+}
+
 function getPrompt(text) {
+
   if (currentMode === "question") {
     return `
-你是一个帮助用户深入思考的助手。
+请提出3-5个关键问题，帮助用户从不同角度思考：
 
-请不要总结内容，而是提出问题：
-
-- 提出3-5个关键问题
-- 帮助用户发现盲点
-- 鼓励从不同角度思考
-
-使用清晰格式：
-## 问题
-- ...
+1、问题一
+2、问题二
+3、问题三
 
 内容：
 ${text}
@@ -91,20 +104,13 @@ ${text}
 
   if (currentMode === "multi") {
     return `
-你是一个帮助用户理解不同视角的助手。
-
 请从不同角度分析：
 
-## 可能的不同视角
-- 视角1：
-- 视角2：
-- 视角3：
+1、视角一
+2、视角二
+3、视角三
 
-## 各自关注点
-- ...
-
-## 可以进一步思考的问题
-- ...
+并提出进一步思考的问题
 
 内容：
 ${text}
@@ -112,26 +118,29 @@ ${text}
   }
 
   return `
-你是一个“思考引导助手”，帮助用户多想一步。
-
 请按结构输出：
 
-## 1、这段内容在说什么
-- 区分事实与观点
+1、这段内容在说什么
+区分事实与观点
 
-## 2、可能的前提
-- 有哪些隐含假设
-- 有什么容易忽略
+2、可能的前提
+有哪些隐含假设
+有什么容易忽略
 
-## 3、可以留意的表达方式
-- 如果存在推理跳跃，请用提问指出
+3、可以留意的表达方式
+如有推理跳跃，用提问方式指出
 
-## 4、值得再想的问题
-- 提出2-4个问题
+4、值得再想的问题
+提出2-4个问题
+
+5、进一步判断的建议
+需要哪些补充信息？
+可以查找哪些资料？
 
 要求：
-- 不做真假判断
-- 多用“可能”“可以进一步思考”
+不要使用符号（如# * -）
+使用清晰编号或短句
+语气温和
 
 内容：
 ${text}
@@ -142,11 +151,10 @@ async function analyze() {
   const text = document.getElementById("input").value;
   const output = document.getElementById("output");
   const loading = document.getElementById("loading");
-  const empty = document.getElementById("empty");
 
   if (!text.trim()) return alert("请输入内容");
 
-  empty.style.display = "none";
+  document.getElementById("guide").style.display = "none";
   loading.classList.remove("hidden");
   output.innerHTML = "";
 
@@ -158,38 +166,43 @@ async function analyze() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        text: prompt
-      })
+      body: JSON.stringify({ text: prompt })
     });
 
     const data = await res.json();
-    console.log(data);
-
     const result = data.choices?.[0]?.message?.content;
 
-    if (!result) {
-      throw new Error("没有返回内容");
-    }
+    if (!result) throw new Error("没有返回内容");
 
-    const sections = result.split(/(?=## )/);
+    const finalText = result + "\n\n我也可能有遗漏和错误，你的判断更重要。";
 
-    sections.forEach(sec => {
+    const sections = finalText.split(/\d、/).filter(Boolean);
+
+    sections.forEach((sec, i) => {
       const div = document.createElement("div");
-      div.className = "bg-white p-6 rounded-2xl shadow-md border border-gray-100 leading-relaxed";
+      div.className = "bg-white p-6 rounded-2xl shadow-md border";
 
-      div.innerHTML = sec
-        .replace(/## (.*)/g, '<h2 class="text-lg font-bold mb-2">$1</h2>')
-        .replace(/- (.*)/g, '<li class="ml-5 list-disc">$1</li>');
+      div.innerHTML = `
+        <div class="font-bold mb-2">${i+1}、</div>
+        <div class="leading-relaxed">${sec}</div>
+      `;
 
       output.appendChild(div);
     });
 
+    document.getElementById("copyBtn").classList.remove("hidden");
+
   } catch (err) {
-    output.innerHTML = `<div class="text-red-500">出错了：${err.message}</div>`;
+    output.innerHTML = `<div class="text-red-500">${err.message}</div>`;
   }
 
   loading.classList.add("hidden");
+}
+
+function copyResult() {
+  const text = document.getElementById("output").innerText;
+  navigator.clipboard.writeText(text);
+  alert("已复制");
 }
 </script>
 
