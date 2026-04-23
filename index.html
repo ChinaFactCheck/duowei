@@ -10,57 +10,32 @@
 
 <div class="w-full max-w-3xl px-6 py-10">
 
-  <!-- 顶部（Notion风） -->
   <div class="mb-10">
     <h1 class="text-3xl font-semibold">多维</h1>
-    <p class="text-gray-400 text-sm mt-2">帮助你更好地理解信息，而不是替你下结论</p>
+    <p class="text-gray-400 text-sm mt-2">不是给答案，而是帮你多想一步</p>
   </div>
 
-  <!-- 输入 -->
-  <div class="mb-6">
-    <textarea id="input"
-      class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-1 focus:ring-gray-400"
-      placeholder="粘贴一段内容..."></textarea>
+  <textarea id="input"
+    class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4"
+    placeholder="粘贴一段内容..."></textarea>
 
-    <!-- 示例 -->
-    <button onclick="fillExample()" class="mt-2 text-sm text-gray-400 hover:underline">
-      使用示例内容
-    </button>
-
-    <!-- 模式 -->
-    <div class="flex gap-2 mt-4">
-      <button onclick="setMode('standard')" id="mode-standard"
-        class="px-3 py-1 text-sm rounded-full bg-black text-white">标准</button>
-      <button onclick="setMode('question')" id="mode-question"
-        class="px-3 py-1 text-sm rounded-full bg-gray-100">提问</button>
-      <button onclick="setMode('multi')" id="mode-multi"
-        class="px-3 py-1 text-sm rounded-full bg-gray-100">多视角</button>
-    </div>
-
-    <button onclick="analyze()"
-      class="mt-4 w-full bg-black text-white py-3 rounded-xl">
-      开始分析
-    </button>
+  <div class="flex gap-2 mt-4">
+    <button onclick="setMode('standard')" id="mode-standard"
+      class="px-3 py-1 rounded-full bg-black text-white text-sm">标准</button>
+    <button onclick="setMode('question')" id="mode-question"
+      class="px-3 py-1 rounded-full bg-gray-100 text-sm">提问</button>
+    <button onclick="setMode('multi')" id="mode-multi"
+      class="px-3 py-1 rounded-full bg-gray-100 text-sm">多视角</button>
   </div>
 
-  <!-- 引导 -->
-  <div id="guide" class="text-gray-400 text-sm mb-6">
-    选择模式 → 粘贴内容 → 开始分析  
-  </div>
-
-  <!-- loading -->
-  <div id="loading" class="hidden text-gray-400 mb-6">
-    分析中...
-  </div>
-
-  <!-- 输出 -->
-  <div id="output" class="space-y-6"></div>
-
-  <!-- 复制 -->
-  <button id="copyBtn" onclick="copyResult()"
-    class="hidden mt-6 w-full border border-gray-200 py-2 rounded-xl text-sm text-gray-600">
-    复制全部内容
+  <button onclick="analyze()"
+    class="mt-4 w-full bg-black text-white py-3 rounded-xl">
+    开始分析
   </button>
+
+  <div id="loading" class="hidden mt-4 text-gray-400">分析中...</div>
+
+  <div id="output" class="space-y-6 mt-6"></div>
 
 </div>
 
@@ -69,139 +44,175 @@ let currentMode = "standard";
 
 function setMode(mode) {
   currentMode = mode;
-  ["standard", "question", "multi"].forEach(m => {
-    document.getElementById("mode-" + m).className =
-      "px-3 py-1 text-sm rounded-full " +
-      (m === mode ? "bg-black text-white" : "bg-gray-100");
+  ["standard","question","multi"].forEach(m=>{
+    document.getElementById("mode-"+m).className =
+      "px-3 py-1 rounded-full text-sm " +
+      (m===mode ? "bg-black text-white":"bg-gray-100");
   });
 }
 
-function fillExample() {
-  document.getElementById("input").value =
-`某国宣布将大幅增加新能源投资，并表示这将改变全球能源格局。有观点认为，这一举措不仅是环保需求，更是地缘政治布局。`;
-}
+function getPrompt(text){
 
-function getPrompt(text) {
-  if (currentMode === "question") {
-    return `
-请提出3-5个问题，引导用户思考，每行一个问题：
+// ⭐⭐⭐ 核心：两阶段思考 ⭐⭐⭐
+
+if(currentMode==="question"){
+return `
+你是一个思考引导助手。
+
+第一步：请先在内部充分思考（不要输出），找出文本中：
+- 关键假设
+- 可能的逻辑跳跃
+- 可以延展的不同理解路径
+
+第二步：基于上述思考，输出3-5个高质量问题：
+
+要求：
+- 问题具体、有启发性
+- 避免泛泛而谈
+- 可以附带一句简短说明
+
+格式：
 
 1、问题一
+（说明）
+
 2、问题二
-3、问题三
-
-内容：
-${text}
-`;
-  }
-
-  if (currentMode === "multi") {
-    return `
-请提供不同理解角度：
-
-1、视角一
-2、视角二
-3、视角三
-
-并提出进一步思考问题
-
-内容：
-${text}
-`;
-  }
-
-  return `
-请按结构输出，每一行一个要点：
-
-1、这段内容在说什么
-2、可能的前提
-3、可以留意的表达方式
-4、值得再想的问题
-5、进一步判断的建议
-
-不要使用符号，用自然语言分行表达
 
 内容：
 ${text}
 `;
 }
 
-async function analyze() {
-  const text = document.getElementById("input").value;
-  const output = document.getElementById("output");
-  const loading = document.getElementById("loading");
+if(currentMode==="multi"){
+return `
+你是一个帮助用户理解复杂问题的助手。
 
-  if (!text.trim()) return alert("请输入内容");
+第一步：先分析文本可能涉及的不同立场、利益或解释路径（不输出）
 
-  document.getElementById("guide").style.display = "none";
-  loading.classList.remove("hidden");
-  output.innerHTML = "";
+第二步：整理为：
 
-  const prompt = getPrompt(text);
+1、可能的不同视角
+（至少3种，每种稍微展开）
 
-  try {
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text: prompt })
-    });
+2、这些视角的差异点
 
-    const data = await res.json();
-    const result = data.choices?.[0]?.message?.content;
+3、可以进一步思考的问题
 
-    if (!result) throw new Error("没有返回内容");
+要求：
+- 不下结论
+- 保持中性
 
-    const finalText = result + "\n\n我也可能有遗漏和错误，你的判断更重要。";
-
-    const sections = finalText.split(/(?=\d、)/).filter(Boolean);
-
-    sections.forEach(sec => {
-
-      const titleMatch = sec.match(/^(\d、[^\n]+)/);
-      const title = titleMatch ? titleMatch[0] : "";
-
-      const content = sec.replace(title, "").trim();
-      const lines = content.split("\n").filter(l => l.trim());
-
-      const div = document.createElement("div");
-      div.className = "bg-white border border-gray-200 rounded-xl p-5";
-
-      const titleEl = document.createElement("div");
-      titleEl.className = "font-semibold text-gray-800 mb-3";
-      titleEl.innerText = title;
-
-      div.appendChild(titleEl);
-
-      lines.forEach(line => {
-        const row = document.createElement("div");
-        row.className = "flex items-start text-gray-700 mb-2";
-
-        row.innerHTML = `
-          <div class="mr-2 mt-1 text-gray-400">•</div>
-          <div>${line}</div>
-        `;
-
-        div.appendChild(row);
-      });
-
-      output.appendChild(div);
-    });
-
-    document.getElementById("copyBtn").classList.remove("hidden");
-
-  } catch (err) {
-    output.innerHTML = `<div class="text-red-500">${err.message}</div>`;
-  }
-
-  loading.classList.add("hidden");
+内容：
+${text}
+`;
 }
 
-function copyResult() {
-  const text = document.getElementById("output").innerText;
-  navigator.clipboard.writeText(text);
-  alert("已复制");
+// ⭐⭐⭐ 标准模式（高质量版）⭐⭐⭐
+return `
+你是一个“思考引导助手”。
+
+第一步（内部思考，不输出）：
+请深入分析文本，包括：
+- 核心论点结构
+- 隐含前提
+- 可能的逻辑跳跃
+- 信息缺口
+
+第二步（对用户输出）：
+
+请按结构整理输出，每一部分可以有2-4行：
+
+1、这段内容在说什么  
+区分事实描述与观点判断，并简要解释表达方式  
+
+2、可能的前提  
+分析其依赖的关键假设（包括隐含前提）  
+以及可能被忽略的条件  
+
+3、可以留意的表达或推理方式  
+如果存在逻辑简化或跳跃，用“提问方式”指出  
+
+4、值得再想的问题  
+提出2-4个有启发的问题  
+
+5、进一步判断的建议  
+如果想更全面理解，还可以关注哪些信息或资料  
+
+要求：
+- 不做真假判断  
+- 多用“可能”“可以进一步思考”  
+- 避免一句话式回答  
+
+内容：
+${text}
+`;
+}
+
+async function analyze(){
+
+const text=document.getElementById("input").value;
+const output=document.getElementById("output");
+const loading=document.getElementById("loading");
+
+if(!text.trim()) return alert("请输入内容");
+
+loading.classList.remove("hidden");
+output.innerHTML="";
+
+const prompt=getPrompt(text);
+
+try{
+const res=await fetch("/api/analyze",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({text:prompt})
+});
+
+const data=await res.json();
+const result=data.choices?.[0]?.message?.content;
+
+if(!result) throw new Error("无返回");
+
+const finalText=result+"\n\n我也可能有遗漏和错误，你的判断更重要。";
+
+// 自动结构解析
+const sections=finalText.split(/(?=\d、)/).filter(Boolean);
+
+sections.forEach(sec=>{
+const titleMatch=sec.match(/^(\d、[^\n]+)/);
+const title=titleMatch?titleMatch[0]:"";
+const content=sec.replace(title,"").trim();
+const lines=content.split("\n").filter(l=>l.trim());
+
+const card=document.createElement("div");
+card.className="bg-white border border-gray-200 rounded-xl p-5";
+
+const titleEl=document.createElement("div");
+titleEl.className="font-semibold mb-3";
+titleEl.innerText=title;
+
+card.appendChild(titleEl);
+
+lines.forEach(line=>{
+const row=document.createElement("div");
+row.className="flex items-start text-gray-700 mb-2";
+
+row.innerHTML=`
+<div class="mr-2 mt-1 text-gray-400">•</div>
+<div>${line}</div>
+`;
+
+card.appendChild(row);
+});
+
+output.appendChild(card);
+});
+
+}catch(err){
+output.innerHTML="<div class='text-red-500'>出错了</div>";
+}
+
+loading.classList.add("hidden");
 }
 </script>
 
