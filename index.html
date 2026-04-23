@@ -6,66 +6,60 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-50 min-h-screen p-6 flex justify-center">
+<body class="bg-[#fafafa] min-h-screen flex justify-center">
 
-<div class="max-w-3xl w-full">
+<div class="w-full max-w-3xl px-6 py-10">
 
-  <!-- 顶部 -->
-  <div class="flex justify-between items-center mb-6">
-    <div>
-      <h1 class="text-2xl font-bold">多维</h1>
-      <p class="text-gray-500 text-sm">帮你多想一步</p>
-    </div>
-    <div class="text-xs text-gray-400">beta</div>
+  <!-- 顶部（Notion风） -->
+  <div class="mb-10">
+    <h1 class="text-3xl font-semibold">多维</h1>
+    <p class="text-gray-400 text-sm mt-2">帮助你更好地理解信息，而不是替你下结论</p>
   </div>
 
-  <!-- 输入区 -->
-  <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100 mb-4">
-    
+  <!-- 输入 -->
+  <div class="mb-6">
     <textarea id="input"
-      class="w-full h-40 border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-black"
-      placeholder="粘贴一段内容，试着多想一步..."></textarea>
+      class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-1 focus:ring-gray-400"
+      placeholder="粘贴一段内容..."></textarea>
 
-    <!-- 示例按钮 -->
-    <button onclick="fillExample()" 
-      class="mt-2 text-sm text-gray-500 underline">
-      试试看示例
+    <!-- 示例 -->
+    <button onclick="fillExample()" class="mt-2 text-sm text-gray-400 hover:underline">
+      使用示例内容
     </button>
 
     <!-- 模式 -->
     <div class="flex gap-2 mt-4">
       <button onclick="setMode('standard')" id="mode-standard"
-        class="px-3 py-1 rounded-lg bg-black text-white text-sm">标准分析</button>
+        class="px-3 py-1 text-sm rounded-full bg-black text-white">标准</button>
       <button onclick="setMode('question')" id="mode-question"
-        class="px-3 py-1 rounded-lg bg-gray-100 text-sm">提问模式</button>
+        class="px-3 py-1 text-sm rounded-full bg-gray-100">提问</button>
       <button onclick="setMode('multi')" id="mode-multi"
-        class="px-3 py-1 rounded-lg bg-gray-100 text-sm">多视角</button>
+        class="px-3 py-1 text-sm rounded-full bg-gray-100">多视角</button>
     </div>
 
     <button onclick="analyze()"
-      class="mt-4 w-full bg-black text-white py-3 rounded-xl hover:opacity-90 transition">
+      class="mt-4 w-full bg-black text-white py-3 rounded-xl">
       开始分析
     </button>
   </div>
 
   <!-- 引导 -->
-  <div id="guide" class="text-gray-400 text-sm mb-4">
-    👉 选择一种模式 → 粘贴内容 → 点击分析  
-    👉 试着关注“你原本没有注意到的地方”
+  <div id="guide" class="text-gray-400 text-sm mb-6">
+    选择模式 → 粘贴内容 → 开始分析  
   </div>
 
   <!-- loading -->
-  <div id="loading" class="hidden text-center text-gray-400 my-4">
+  <div id="loading" class="hidden text-gray-400 mb-6">
     分析中...
   </div>
 
   <!-- 输出 -->
-  <div id="output" class="space-y-4 mt-4"></div>
+  <div id="output" class="space-y-6"></div>
 
-  <!-- 复制按钮 -->
+  <!-- 复制 -->
   <button id="copyBtn" onclick="copyResult()"
-    class="hidden mt-4 w-full bg-gray-200 py-2 rounded-xl">
-    复制结果
+    class="hidden mt-6 w-full border border-gray-200 py-2 rounded-xl text-sm text-gray-600">
+    复制全部内容
   </button>
 
 </div>
@@ -77,7 +71,7 @@ function setMode(mode) {
   currentMode = mode;
   ["standard", "question", "multi"].forEach(m => {
     document.getElementById("mode-" + m).className =
-      "px-3 py-1 rounded-lg text-sm " +
+      "px-3 py-1 text-sm rounded-full " +
       (m === mode ? "bg-black text-white" : "bg-gray-100");
   });
 }
@@ -88,10 +82,9 @@ function fillExample() {
 }
 
 function getPrompt(text) {
-
   if (currentMode === "question") {
     return `
-请提出3-5个关键问题，帮助用户从不同角度思考：
+请提出3-5个问题，引导用户思考，每行一个问题：
 
 1、问题一
 2、问题二
@@ -104,13 +97,13 @@ ${text}
 
   if (currentMode === "multi") {
     return `
-请从不同角度分析：
+请提供不同理解角度：
 
 1、视角一
 2、视角二
 3、视角三
 
-并提出进一步思考的问题
+并提出进一步思考问题
 
 内容：
 ${text}
@@ -118,30 +111,15 @@ ${text}
   }
 
   return `
-请按结构输出：
+请按结构输出，每一行一个要点：
 
 1、这段内容在说什么
-区分事实与观点
-
 2、可能的前提
-有哪些隐含假设
-有什么容易忽略
-
 3、可以留意的表达方式
-如有推理跳跃，用提问方式指出
-
 4、值得再想的问题
-提出2-4个问题
-
 5、进一步判断的建议
-需要哪些补充信息？
-可以查找哪些资料？
 
-要求：
-不要使用符号（如# * -）
-每一部分内部请用换行分点表达，每一行表达一个信息点，不要写成长段落
-使用清晰编号或短句
-语气温和
+不要使用符号，用自然语言分行表达
 
 内容：
 ${text}
@@ -179,43 +157,37 @@ async function analyze() {
 
     const sections = finalText.split(/(?=\d、)/).filter(Boolean);
 
-sections.forEach(sec => {
+    sections.forEach(sec => {
 
-  // 提取标题（例如：1、这段内容在说什么）
-  const titleMatch = sec.match(/^(\d、[^\n]+)/);
-  const title = titleMatch ? titleMatch[0] : "";
+      const titleMatch = sec.match(/^(\d、[^\n]+)/);
+      const title = titleMatch ? titleMatch[0] : "";
 
-  // 去掉标题后的正文
-  const content = sec.replace(title, "").trim();
+      const content = sec.replace(title, "").trim();
+      const lines = content.split("\n").filter(l => l.trim());
 
-  // 把正文按换行拆分成“段落”
-  const lines = content.split("\n").filter(l => l.trim() !== "");
+      const div = document.createElement("div");
+      div.className = "bg-white border border-gray-200 rounded-xl p-5";
 
-  const div = document.createElement("div");
-  div.className = "bg-white p-6 rounded-2xl shadow-md border border-gray-100";
+      const titleEl = document.createElement("div");
+      titleEl.className = "font-semibold text-gray-800 mb-3";
+      titleEl.innerText = title;
 
-  // 标题
-  const titleEl = document.createElement("div");
-  titleEl.className = "text-lg font-bold mb-3";
-  titleEl.innerText = title;
+      div.appendChild(titleEl);
 
-  div.appendChild(titleEl);
+      lines.forEach(line => {
+        const row = document.createElement("div");
+        row.className = "flex items-start text-gray-700 mb-2";
 
-  // 内容（每一行变成一个“点”）
-  lines.forEach(line => {
-    const item = document.createElement("div");
-    item.className = "flex items-start mb-2";
+        row.innerHTML = `
+          <div class="mr-2 mt-1 text-gray-400">•</div>
+          <div>${line}</div>
+        `;
 
-    item.innerHTML = `
-      <div class="mr-2 mt-1 text-black">•</div>
-      <div class="leading-relaxed">${line}</div>
-    `;
+        div.appendChild(row);
+      });
 
-    div.appendChild(item);
-  });
-
-  output.appendChild(div);
-});
+      output.appendChild(div);
+    });
 
     document.getElementById("copyBtn").classList.remove("hidden");
 
