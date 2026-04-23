@@ -10,23 +10,19 @@
 
 <div class="w-full max-w-3xl px-6 py-10">
 
-  <!-- 标题 -->
   <div class="mb-10">
     <h1 class="text-3xl font-semibold">多维</h1>
     <p class="text-gray-400 text-sm mt-2">帮你多想一步</p>
   </div>
 
-  <!-- 输入 -->
   <textarea id="input"
     class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4"
     placeholder="粘贴一段内容..."></textarea>
 
-  <!-- 示例 -->
   <button onclick="fillExample()" class="mt-2 text-sm text-gray-400 underline">
     使用示例内容
   </button>
 
-  <!-- 模式 -->
   <div class="flex gap-2 mt-4">
     <button onclick="setMode('standard')" id="mode-standard"
       class="px-3 py-1 rounded-full bg-black text-white text-sm">标准</button>
@@ -36,16 +32,13 @@
       class="px-3 py-1 rounded-full bg-gray-100 text-sm">多视角</button>
   </div>
 
-  <!-- 按钮 -->
   <button onclick="analyze()"
     class="mt-4 w-full bg-black text-white py-3 rounded-xl">
     开始分析
   </button>
 
-  <!-- loading -->
   <div id="loading" class="hidden mt-4 text-gray-400">分析中...</div>
 
-  <!-- 输出 -->
   <div id="output" class="mt-6"></div>
 
 </div>
@@ -69,17 +62,18 @@ function fillExample(){
 
 function getPrompt(text){
 
-// 提问模式（升级）
+// ✅ 提问模式（优化）
 if(currentMode==="question"){
 return `
 你是一个思考引导助手。
 
-请提出3-5个有启发性的问题：
+请基于内容提出3-5个有启发性的问题：
 - 问题尽量具体
+- 避免重复原文
 - 可以从假设、逻辑、信息缺口等角度出发
-- 可以附带一句简短说明
 
-格式：
+直接输出问题，每个问题单独一行，例如：
+
 1、问题一
 2、问题二
 3、问题三
@@ -89,56 +83,52 @@ ${text}
 `;
 }
 
-// 多视角模式
+// ✅ 多视角模式（优化）
 if(currentMode==="multi"){
 return `
-请从不同角度理解这段内容：
+请从不同角度理解这段内容，并自然表达：
 
-1、视角一（稍作展开）
-2、视角二
-3、视角三
+包括：
+- 不同可能的理解视角（至少3种）
+- 各视角之间的差异
+- 可以进一步思考的问题
 
-并指出这些视角的差异点，以及可以进一步思考的问题
+请用自然段表达，而不是机械格式。
 
 内容：
 ${text}
 `;
 }
 
-// ⭐ 标准模式（重点升级）
+// ✅ 标准模式（彻底修复“prompt泄露”问题）
 return `
-你是一个“思考引导助手”。
+你是一个思考引导助手。
 
-第一步（内部思考，不输出）：
-请分析文本结构，包括：
-- 哪些是事实描述
-- 哪些是观点或推测
-- 是否存在隐含前提或信息缺口
+请先理解文本，再进行结构化表达。
 
-第二步（输出）：
+输出必须遵循以下结构，但不要重复这些说明：
 
 1、这段内容在说什么  
-请明确区分：  
+使用以下两个小标题展开：
 事实描述：  
 观点/判断/推测：  
 
 2、可能的前提  
-分析其依赖的关键假设（包括隐含前提）  
-以及可能被忽略的条件  
+分析该说法依赖的关键假设，以及可能被忽略的条件  
 
 3、可以留意的表达或推理方式  
-如有逻辑跳跃，请用提问方式指出  
+如存在逻辑跳跃，请用提问方式表达  
 
 4、值得再想的问题  
-提出2-4个问题  
+提出2-4个新的思考问题  
 
 5、进一步判断的建议  
-可以关注哪些信息或资料  
+说明还可以补充关注哪些信息或资料  
 
 要求：
 - 不做真假判断  
 - 多使用“可能”“可以进一步思考”  
-- 每一点适当展开  
+- 每部分适当展开  
 
 内容：
 ${text}
@@ -170,56 +160,69 @@ const result=data.choices?.[0]?.message?.content;
 
 if(!result) throw new Error("没有返回内容");
 
-// ⭐⭐⭐ 新渲染逻辑（类似 ChatGPT）⭐⭐⭐
+// ⭐ 渲染逻辑优化（兼容三种模式）
+
 const container=document.createElement("div");
-container.className="bg-white border border-gray-200 rounded-xl p-6 leading-relaxed space-y-3";
+container.className="bg-white border border-gray-200 rounded-xl p-6 leading-relaxed space-y-4";
 
-const sections=result.split(/(?=\d、)/).filter(Boolean);
+// 标准模式 → 分结构
+if(currentMode==="standard"){
 
-sections.forEach(sec=>{
+  const sections=result.split(/(?=\d、)/).filter(Boolean);
 
-  const titleMatch=sec.match(/^(\d、[^\n]+)/);
-  const title=titleMatch?titleMatch[0]:"";
+  sections.forEach(sec=>{
+    const titleMatch=sec.match(/^(\d、[^\n]+)/);
+    const title=titleMatch?titleMatch[0]:"";
 
-  const content=sec.replace(title,"").trim();
-  const lines=content.split("\n").filter(l=>l.trim());
+    const content=sec.replace(title,"").trim();
+    const lines=content.split("\n").filter(l=>l.trim());
 
-  // 标题
-  const titleEl=document.createElement("div");
-  titleEl.className="font-semibold text-gray-900 mt-4";
-  titleEl.innerText=title;
-  container.appendChild(titleEl);
+    const titleEl=document.createElement("div");
+    titleEl.className="font-semibold text-gray-900 mt-4";
+    titleEl.innerText=title;
+    container.appendChild(titleEl);
 
-  // 内容
-  lines.forEach(line=>{
+    lines.forEach(line=>{
 
-    // 子标题（比如：事实描述：）
-    if(line.includes("：") && line.length < 20){
-      const sub=document.createElement("div");
-      sub.className="font-medium text-gray-700 mt-2";
-      sub.innerText=line;
-      container.appendChild(sub);
-      return;
-    }
+      if(line.includes("：") && line.length < 20){
+        const sub=document.createElement("div");
+        sub.className="font-medium text-gray-700 mt-2";
+        sub.innerText=line;
+        container.appendChild(sub);
+        return;
+      }
 
-    const row=document.createElement("div");
-    row.className="flex items-start text-gray-700";
+      const row=document.createElement("div");
+      row.className="flex items-start text-gray-700";
 
-    row.innerHTML=`
-      <div class="mr-2 mt-1 text-gray-400">•</div>
-      <div>${line}</div>
-    `;
+      row.innerHTML=`
+        <div class="mr-2 mt-1 text-gray-400">•</div>
+        <div>${line}</div>
+      `;
 
-    container.appendChild(row);
+      container.appendChild(row);
+    });
   });
 
-});
+} else {
+
+  // 👉 提问 & 多视角：直接像ChatGPT那样展示
+  const paragraphs=result.split("\n").filter(p=>p.trim());
+
+  paragraphs.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="text-gray-800";
+    div.innerText=p;
+    container.appendChild(div);
+  });
+
+}
 
 output.appendChild(container);
 
-// ⭐⭐⭐ 提醒语（独立）⭐⭐⭐
+// ⭐ 独立提醒语
 const note=document.createElement("div");
-note.className="mt-6 text-sm text-gray-400 text-center";
+note.className="mt-6 text-sm text-gray-400 text-center font-semibold";
 note.innerText="我也可能有遗漏和错误，你的判断更重要。";
 
 output.appendChild(note);
