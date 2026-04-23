@@ -114,6 +114,7 @@ ${text}`;
   });
 
   const data = await res.json();
+  console.log(data);
   const result = data.choices?.[0]?.message?.content;
 
 if (!result) {
