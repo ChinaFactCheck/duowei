@@ -139,6 +139,7 @@ ${text}
 
 要求：
 不要使用符号（如# * -）
+每一部分内部请用换行分点表达，每一行表达一个信息点，不要写成长段落
 使用清晰编号或短句
 语气温和
 
@@ -176,19 +177,45 @@ async function analyze() {
 
     const finalText = result + "\n\n我也可能有遗漏和错误，你的判断更重要。";
 
-    const sections = finalText.split(/\d、/).filter(Boolean);
+    const sections = finalText.split(/(?=\d、)/).filter(Boolean);
 
-    sections.forEach((sec, i) => {
-      const div = document.createElement("div");
-      div.className = "bg-white p-6 rounded-2xl shadow-md border";
+sections.forEach(sec => {
 
-      div.innerHTML = `
-        <div class="font-bold mb-2">${i+1}、</div>
-        <div class="leading-relaxed">${sec}</div>
-      `;
+  // 提取标题（例如：1、这段内容在说什么）
+  const titleMatch = sec.match(/^(\d、[^\n]+)/);
+  const title = titleMatch ? titleMatch[0] : "";
 
-      output.appendChild(div);
-    });
+  // 去掉标题后的正文
+  const content = sec.replace(title, "").trim();
+
+  // 把正文按换行拆分成“段落”
+  const lines = content.split("\n").filter(l => l.trim() !== "");
+
+  const div = document.createElement("div");
+  div.className = "bg-white p-6 rounded-2xl shadow-md border border-gray-100";
+
+  // 标题
+  const titleEl = document.createElement("div");
+  titleEl.className = "text-lg font-bold mb-3";
+  titleEl.innerText = title;
+
+  div.appendChild(titleEl);
+
+  // 内容（每一行变成一个“点”）
+  lines.forEach(line => {
+    const item = document.createElement("div");
+    item.className = "flex items-start mb-2";
+
+    item.innerHTML = `
+      <div class="mr-2 mt-1 text-black">•</div>
+      <div class="leading-relaxed">${line}</div>
+    `;
+
+    div.appendChild(item);
+  });
+
+  output.appendChild(div);
+});
 
     document.getElementById("copyBtn").classList.remove("hidden");
 
