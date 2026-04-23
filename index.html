@@ -6,39 +6,58 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-[#fafafa] min-h-screen flex justify-center">
+<body class="bg-gradient-to-br from-[#f7faf9] to-[#f3f0ff] min-h-screen flex justify-center">
 
 <div class="w-full max-w-3xl px-6 py-10">
 
+  <!-- 标题 -->
   <div class="mb-10">
-    <h1 class="text-3xl font-semibold">多维</h1>
-    <p class="text-gray-400 text-sm mt-2">帮你多想一步</p>
+    <h1 class="text-3xl font-semibold text-gray-800">多维</h1>
+    <p class="text-gray-500 text-sm mt-2">帮你多想一步</p>
   </div>
 
+  <!-- 输入框 -->
   <textarea id="input"
-    class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4"
+    class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-green-300 transition"
     placeholder="粘贴一段内容..."></textarea>
 
-  <button onclick="fillExample()" class="mt-2 text-sm text-gray-400 underline">
+  <!-- 示例 -->
+  <button onclick="fillExample()" 
+    class="mt-2 text-sm text-green-600 hover:underline">
     使用示例内容
   </button>
 
+  <!-- 模式按钮 -->
   <div class="flex gap-2 mt-4">
     <button onclick="setMode('standard')" id="mode-standard"
-      class="px-3 py-1 rounded-full bg-black text-white text-sm">标准</button>
+      class="px-4 py-1.5 rounded-full text-sm transition bg-green-500 text-white shadow-sm">
+      标准
+    </button>
+
     <button onclick="setMode('question')" id="mode-question"
-      class="px-3 py-1 rounded-full bg-gray-100 text-sm">提问</button>
+      class="px-4 py-1.5 rounded-full text-sm transition bg-gray-100 hover:bg-purple-100">
+      提问
+    </button>
+
     <button onclick="setMode('multi')" id="mode-multi"
-      class="px-3 py-1 rounded-full bg-gray-100 text-sm">多视角</button>
+      class="px-4 py-1.5 rounded-full text-sm transition bg-gray-100 hover:bg-purple-100">
+      多视角
+    </button>
   </div>
 
+  <!-- 主按钮 -->
   <button onclick="analyze()"
-    class="mt-4 w-full bg-black text-white py-3 rounded-xl">
+    class="mt-5 w-full py-3 rounded-xl text-white font-medium
+    bg-gradient-to-r from-green-400 to-purple-400
+    hover:from-green-500 hover:to-purple-500
+    transition shadow-md">
     开始分析
   </button>
 
-  <div id="loading" class="hidden mt-4 text-gray-400">分析中...</div>
+  <!-- loading -->
+  <div id="loading" class="hidden mt-4 text-gray-500">分析中...</div>
 
+  <!-- 输出 -->
   <div id="output" class="mt-6"></div>
 
 </div>
@@ -48,10 +67,20 @@ let currentMode = "standard";
 
 function setMode(mode){
   currentMode = mode;
+
   ["standard","question","multi"].forEach(m=>{
-    document.getElementById("mode-"+m).className =
-      "px-3 py-1 rounded-full text-sm " +
-      (m===mode ? "bg-black text-white":"bg-gray-100");
+    const el = document.getElementById("mode-"+m);
+
+    if(m === mode){
+      el.className = "px-4 py-1.5 rounded-full text-sm transition text-white shadow-sm " +
+        (m==="standard"
+          ? "bg-green-500"
+          : m==="question"
+          ? "bg-purple-400"
+          : "bg-indigo-400");
+    } else {
+      el.className = "px-4 py-1.5 rounded-full text-sm transition bg-gray-100 hover:bg-purple-100";
+    }
   });
 }
 
@@ -163,7 +192,7 @@ if(!result) throw new Error("没有返回内容");
 // ⭐ 渲染逻辑优化（兼容三种模式）
 
 const container=document.createElement("div");
-container.className="bg-white border border-gray-200 rounded-xl p-6 leading-relaxed space-y-4";
+container.className = "bg-white border border-gray-100 rounded-xl p-6 leading-relaxed space-y-4 shadow-sm hover:shadow-md transition";
 
 // 标准模式 → 分结构
 if(currentMode==="standard"){
