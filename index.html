@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>再看一眼</title>
+  <title>多维</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -58,14 +58,14 @@ async function analyze() {
 内容：
 ${text}`;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer YOUR_API_KEY"
+      "Authorization": "Bearer sk-c2545cb1083e41659785f6bc3efda45b"
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "qwen-plus",
       messages: [{ role: "user", content: prompt }]
     })
   });
