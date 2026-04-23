@@ -58,11 +58,10 @@ async function analyze() {
 内容：
 ${text}`;
 
-  const res = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
+  const res = await fetch("/api/analyze", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer sk-c2545cb1083e41659785f6bc3efda45b"
     },
     body: JSON.stringify({
       model: "qwen-plus",
