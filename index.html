@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>三思</title>
+  <title>三思AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -13,44 +13,43 @@
   <!-- 标题 -->
   <div class="mb-10">
     <h1 class="text-3xl font-semibold text-gray-800">三思AI</h1>
-    <p class="text-gray-500 text-sm mt-2">不是给答案，而是陪你多想一步</p>
+    <p class="text-gray-500 text-sm mt-2">帮你多想一步</p>
   </div>
 
-  <!-- 输入框 -->
+  <!-- 输入 -->
   <textarea id="input"
-    class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-green-300 transition"
-    placeholder="粘贴一段内容..."></textarea>
+    class="w-full h-40 bg-white border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-green-300"
+    placeholder="粘贴新闻 / 视频内容 / 评论区 / 或你的理解..."></textarea>
 
   <!-- 示例 -->
-  <button onclick="fillExample()" 
-    class="mt-2 text-sm text-green-600 hover:underline">
+  <button onclick="fillExample()" class="mt-2 text-sm text-green-600 hover:underline">
     使用示例内容
   </button>
 
-  <!-- 模式按钮 -->
-  <div class="flex gap-2 mt-4">
-    <button onclick="setMode('standard')" id="mode-standard"
-      class="px-4 py-1.5 rounded-full text-sm transition bg-green-500 text-white shadow-sm">
-      标准
-    </button>
-
-    <button onclick="setMode('question')" id="mode-question"
-      class="px-4 py-1.5 rounded-full text-sm transition bg-gray-100 hover:bg-purple-100">
-      提问
-    </button>
-
-    <button onclick="setMode('multi')" id="mode-multi"
-      class="px-4 py-1.5 rounded-full text-sm transition bg-gray-100 hover:bg-purple-100">
-      多视角
-    </button>
+  <div class="text-sm text-gray-400 mt-1">
+    支持：新闻、短视频字幕、评论区、截图整理内容
   </div>
 
-  <!-- 主按钮 -->
+  <!-- 模式选择 -->
+  <div class="flex gap-2 mt-4 flex-wrap">
+    <button onclick="setMode('standard')" id="mode-standard"
+      class="px-4 py-1.5 rounded-full text-sm bg-green-500 text-white">标准</button>
+
+    <button onclick="setMode('question')" id="mode-question"
+      class="px-4 py-1.5 rounded-full text-sm bg-gray-100">提问</button>
+
+    <button onclick="setMode('multi')" id="mode-multi"
+      class="px-4 py-1.5 rounded-full text-sm bg-gray-100">多视角</button>
+
+    <button onclick="setMode('video')" id="mode-video"
+      class="px-4 py-1.5 rounded-full text-sm bg-gray-100">短视频</button>
+  </div>
+
+  <!-- 按钮 -->
   <button onclick="analyze()"
     class="mt-5 w-full py-3 rounded-xl text-white font-medium
     bg-gradient-to-r from-green-400 to-purple-400
-    hover:from-green-500 hover:to-purple-500
-    transition shadow-md">
+    hover:from-green-500 hover:to-purple-500 transition shadow-md">
     开始分析
   </button>
 
@@ -68,96 +67,111 @@ let currentMode = "standard";
 function setMode(mode){
   currentMode = mode;
 
-  ["standard","question","multi"].forEach(m=>{
+  ["standard","question","multi","video"].forEach(m=>{
     const el = document.getElementById("mode-"+m);
 
     if(m === mode){
-      el.className = "px-4 py-1.5 rounded-full text-sm transition text-white shadow-sm " +
+      el.className = "px-4 py-1.5 rounded-full text-sm text-white " +
         (m==="standard"
           ? "bg-green-500"
           : m==="question"
           ? "bg-purple-400"
-          : "bg-indigo-400");
+          : m==="multi"
+          ? "bg-indigo-400"
+          : "bg-pink-400");
     } else {
-      el.className = "px-4 py-1.5 rounded-full text-sm transition bg-gray-100 hover:bg-purple-100";
+      el.className = "px-4 py-1.5 rounded-full text-sm bg-gray-100";
     }
   });
 }
 
 function fillExample(){
   document.getElementById("input").value =
-`某国宣布将大幅增加新能源投资，并表示这将改变全球能源格局。有观点认为，这一举措不仅是环保需求，更是地缘政治布局。`;
+`某视频称：某国经济即将崩溃，引发大量网友讨论，有人表示担忧，也有人认为是夸张说法。`;
 }
 
 function getPrompt(text){
 
-// ✅ 提问模式（优化）
 if(currentMode==="question"){
 return `
-你是一个思考引导助手。
-
-请基于内容提出3-5个有启发性的问题：
-- 问题尽量具体
-- 避免重复原文
-- 可以从假设、逻辑、信息缺口等角度出发
-
-直接输出问题，每个问题单独一行，例如：
-
-1、问题一
-2、问题二
-3、问题三
+请提出3-5个有启发性的问题，每行一个：
 
 内容：
 ${text}
 `;
 }
 
-// ✅ 多视角模式（优化）
 if(currentMode==="multi"){
 return `
-请从不同角度理解这段内容，并自然表达：
-
-包括：
-- 不同可能的理解视角（至少3种）
-- 各视角之间的差异
-- 可以进一步思考的问题
-
-请用自然段表达，而不是机械格式。
+请从不同角度理解这段内容，并自然表达不同视角及差异：
 
 内容：
 ${text}
 `;
 }
 
-// ✅ 标准模式（彻底修复“prompt泄露”问题）
+// ⭐短视频模式
+if(currentMode==="video"){
+return `
+你是一个短视频信息理解助手。
+
+请分析：
+
+1、这段内容在表达什么  
+区分：
+事实性信息：
+观点/情绪：
+
+2、信息可能缺失的部分  
+
+3、表达方式中可以留意的点（用提问方式表达）
+
+4、不同可能的理解角度  
+
+5、可以进一步思考的问题  
+
+要求：
+- 信息可能不完整
+- 不做真假判断
+- 使用“可能”等表达
+
+内容：
+${text}
+`;
+}
+
+// ⭐标准模式
 return `
 你是一个思考引导助手。
 
-请先理解文本，再进行结构化表达。
+请对内容进行结构化分析，并用自然表达呈现。
 
-输出必须遵循以下结构，但不要重复这些说明：
+输出需包含以下部分：
 
 1、这段内容在说什么  
-使用以下两个小标题展开：
-事实描述：  
-观点/判断/推测：  
+使用两个小标题展开：  
+事实描述：提取可以被验证的信息，避免重复原文  
+观点/判断/推测：识别带解释、立场或推断的内容  
 
 2、可能的前提  
-分析该说法依赖的关键假设，以及可能被忽略的条件  
+分析该说法成立所依赖的关键假设，包括隐含前提  
+可以考虑这些前提是否被充分说明  
 
 3、可以留意的表达或推理方式  
-如存在逻辑跳跃，请用提问方式表达  
+如果存在逻辑跳跃或简化表达，请用提问方式呈现  
+例如是否存在因果简化、以偏概全等  
 
 4、值得再想的问题  
-提出2-4个新的思考问题  
+提出2-4个有延伸性的思考问题  
 
 5、进一步判断的建议  
-说明还可以补充关注哪些信息或资料  
+说明可以关注哪些信息或资料来更全面理解  
 
 要求：
 - 不做真假判断  
-- 多使用“可能”“可以进一步思考”  
-- 每部分适当展开  
+- 避免简单重复原文  
+- 多使用“可能”“可以进一步思考”等表达  
+- 每一部分适度展开，而不是一句话带过  
 
 内容：
 ${text}
@@ -187,14 +201,21 @@ body:JSON.stringify({text:prompt})
 const data=await res.json();
 const result=data.choices?.[0]?.message?.content;
 
-if(!result) throw new Error("没有返回内容");
+if(!result) throw new Error("no result");
 
-// ⭐ 渲染逻辑优化（兼容三种模式）
-
+// 创建容器
 const container=document.createElement("div");
-container.className = "bg-white border border-gray-100 rounded-xl p-6 leading-relaxed space-y-4 shadow-sm hover:shadow-md transition";
+container.className="bg-white border border-gray-100 rounded-xl p-6 space-y-4 shadow-sm";
 
-// 标准模式 → 分结构
+// ⭐短视频提示
+if(currentMode==="video"){
+  const tip=document.createElement("div");
+  tip.className="text-sm text-purple-500";
+  tip.innerText="提示：短视频内容可能是片段表达，可以留意未呈现的信息";
+  container.appendChild(tip);
+}
+
+// ⭐标准模式结构化
 if(currentMode==="standard"){
 
   const sections=result.split(/(?=\d、)/).filter(Boolean);
@@ -207,20 +228,11 @@ if(currentMode==="standard"){
     const lines=content.split("\n").filter(l=>l.trim());
 
     const titleEl=document.createElement("div");
-    titleEl.className="font-semibold text-gray-900 mt-4";
+    titleEl.className="font-semibold text-gray-900";
     titleEl.innerText=title;
     container.appendChild(titleEl);
 
     lines.forEach(line=>{
-
-      if(line.includes("：") && line.length < 20){
-        const sub=document.createElement("div");
-        sub.className="font-medium text-gray-700 mt-2";
-        sub.innerText=line;
-        container.appendChild(sub);
-        return;
-      }
-
       const row=document.createElement("div");
       row.className="flex items-start text-gray-700";
 
@@ -235,21 +247,21 @@ if(currentMode==="standard"){
 
 } else {
 
-  // 👉 提问 & 多视角：直接像ChatGPT那样展示
-  const paragraphs=result.split("\n").filter(p=>p.trim());
+// 👉 其他模式（更自然）
+const paragraphs=result.split("\n").filter(p=>p.trim());
 
-  paragraphs.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="text-gray-800";
-    div.innerText=p;
-    container.appendChild(div);
-  });
+paragraphs.forEach(p=>{
+  const div=document.createElement("div");
+  div.className="text-gray-800";
+  div.innerText=p;
+  container.appendChild(div);
+});
 
 }
 
 output.appendChild(container);
 
-// ⭐ 独立提醒语
+// ⭐提醒语
 const note=document.createElement("div");
 note.className="mt-6 text-sm text-gray-400 text-center font-semibold";
 note.innerText="我也可能有遗漏和错误，你的判断更重要。";
